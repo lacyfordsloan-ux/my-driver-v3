@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JS Diagnostics</title>
+  <style>
+    body { background: #0a0a0a; color: white; font-family: monospace; padding: 20px; }
+    .ok { color: #4ade80; }
+    .err { color: #f87171; }
+    .info { color: #60a5fa; }
+    li { padding: 4px 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h2 style="color:#FFB4A8">JS Diagnostics</h2>
+  <ul id="log"></ul>
+  <script>
+    var log = document.getElementById('log');
+    function add(text, type) {
+      var li = document.createElement('li');
+      li.className = type || 'info';
+      li.textContent = (new Date().toLocaleTimeString()) + ' — ' + text;
+      log.appendChild(li);
+    }
+
+    add('Script started ✓', 'ok');
+    add('userAgent: ' + navigator.userAgent.substring(0, 80), 'info');
+    add('online: ' + navigator.onLine, 'info');
+
+    // Test setTimeout
+    add('Testing setTimeout...', 'info');
+    setTimeout(function() {
+      add('setTimeout works ✓', 'ok');
+    }, 100);
+
+    // Test fetch to the Next.js app
+    add('Testing fetch to /api/health or /...', 'info');
+    fetch('/').then(function(r) {
+      add('fetch("/") → ' + r.status, r.ok ? 'ok' : 'err');
+    }).catch(function(e) {
+      add('fetch("/") ERROR: ' + e.message, 'err');
+    });
+
+    // Test localStorage
+    try {
+      localStorage.setItem('_test', '1');
+      localStorage.removeItem('_test');
+      add('localStorage works ✓', 'ok');
+    } catch(e) {
+      add('localStorage BLOCKED: ' + e.message, 'err');
+    }
+
+    // Test loading the Next.js chunk
+    add('Testing chunk loading...', 'info');
+    var s = document.createElement('script');
+    s.src = '/_next/static/chunks/turbopack-13tiqg~gbtane.js';
+    s.onload = function() { add('Next.js chunk loaded ✓', 'ok'); };
+    s.onerror = function(e) { add('Next.js chunk FAILED to load ✗', 'err'); };
+    document.head.appendChild(s);
+
+    // All errors
+    window.onerror = function(msg, url, line, col) {
+      add('GLOBAL ERROR: ' + msg + ' at line ' + line, 'err');
+    };
+    window.onunhandledrejection = function(e) {
+      add('UNHANDLED PROMISE: ' + (e.reason && e.reason.message || e.reason), 'err');
+    };
+
+    add('All checks initialized. Wait 2-3 seconds for results.', 'info');
+  </script>
+</body>
+</html>

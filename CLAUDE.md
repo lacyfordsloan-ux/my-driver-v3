@@ -1,1 +1,1 @@
-DEBUG=true
+@AGENTS.md
