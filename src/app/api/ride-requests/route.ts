@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
@@ -15,7 +15,6 @@ const createRideSchema = z.object({
   fromLng: z.number().optional(),
   toLat: z.number().optional(),
   toLng: z.number().optional(),
-  // PROHIBITED: price
 });
 
 export async function POST(req: Request) {
@@ -31,13 +30,26 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = createRideSchema.parse(body);
 
-    const rideRequest = await prisma.rideRequest.create({
-      data: {
-        ...validatedData,
-        passengerId: decoded.id,
-        status: 'PENDING',
-      },
-    });
+    const { data: rideRequest, error } = await supabase
+      .from('ride_requests')
+      .insert({
+        from_address: validatedData.fromName,
+        to_address: validatedData.toName,
+        from_lat: validatedData.fromLat,
+        from_lng: validatedData.fromLng,
+        to_lat: validatedData.toLat,
+        to_lng: validatedData.toLng,
+        user_id: decoded.id,
+        status: 'pending',
+        expires_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(), // 20 min TTL
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[Ride Request Create Error]:', error);
+      return NextResponse.json({ error: 'Ошибка создания заявки' }, { status: 500 });
+    }
 
     return NextResponse.json(rideRequest);
   } catch (error) {
@@ -50,15 +62,17 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const requests = await prisma.rideRequest.findMany({
-      where: { status: 'PENDING' },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        passenger: {
-          select: { firstName: true, phone: true }
-        }
-      }
-    });
+    const { data: requests, error } = await supabase
+      .from('ride_requests')
+      .select('*, profiles(*), ride_offers(count)')
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[Ride Request Fetch Error]:', error);
+      return NextResponse.json({ error: 'Ошибка получения заявок' }, { status: 500 });
+    }
 
     return NextResponse.json(requests);
   } catch (error) {

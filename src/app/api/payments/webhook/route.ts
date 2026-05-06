@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
@@ -18,11 +18,14 @@ export async function POST(req: Request) {
     const amountPaid = parseFloat(payment.amount.value);
     
     // 1. Find the pending subscription
-    const subscription = await prisma.subscription.findFirst({
-      where: { yookassaPaymentId: yookassaId, status: 'PENDING' }
-    });
+    const { data: subscription, error: findError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('yookassa_payment_id', yookassaId)
+      .eq('status', 'PENDING')
+      .maybeSingle();
 
-    if (!subscription) {
+    if (findError || !subscription) {
       console.warn(`[YOO WEBHOOK] Subscription was not found for ID: ${yookassaId}`);
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
@@ -39,10 +42,10 @@ export async function POST(req: Request) {
     console.log(`[YOO WEBHOOK] Amount accepted within 10 ruble margin. Paid ${amountPaid}, Expected ${expected}`);
 
     // 3. Update subscription and potentially driver status
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: { status: 'SUCCEEDED' }
-    });
+    await supabase
+      .from('subscriptions')
+      .update({ status: 'SUCCEEDED' })
+      .eq('id', subscription.id);
 
     // Optionally update user role or meta for subscription access
     // await prisma.user.update({ where: { id: subscription.userId }, data: { subActiveUntil: ... } });

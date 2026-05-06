@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
@@ -23,16 +23,22 @@ export async function POST(req: Request) {
     const { amount } = await req.json(); // Fixed subscription amount (e.g. 500)
 
     // 1. Create a pending subscription in our DB
-    const subscription = await prisma.subscription.create({
-      data: {
-        userId: decoded.id,
+    const { data: subscription, error: subError } = await supabase
+      .from('subscriptions')
+      .insert({
+        user_id: decoded.id,
         amount: parseFloat(amount),
         status: 'PENDING',
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (subError || !subscription) {
+      console.error('[YOO] Subscription creation error:', subError);
+      return NextResponse.json({ error: 'Ошибка создания подписки' }, { status: 500 });
+    }
 
     // 2. Mock or Call YooKassa API to create a payment
-    // We'll use axios to simulate the real request if keys are missing
     let paymentUrl = `https://yookassa.ru/payments/mock/${subscription.id}`;
     let yookassaId = `yo_${Math.random().toString(36).substring(7)}`;
 
@@ -56,10 +62,10 @@ export async function POST(req: Request) {
     }
 
     // 3. Update subscription with YooKassa ID
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: { yookassaPaymentId: yookassaId }
-    });
+    await supabase
+      .from('subscriptions')
+      .update({ yookassa_payment_id: yookassaId })
+      .eq('id', subscription.id);
 
     return NextResponse.json({ url: paymentUrl });
   } catch (error) {

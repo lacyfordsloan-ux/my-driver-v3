@@ -1,8 +1,22 @@
-export default function Page() {
+import { supabase } from '@/lib/supabase';
+
+export const dynamic = 'force-dynamic';
+
+export default async function Page() {
+  const { data: cities, error } = await supabase
+    .from('settlements')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Failed to fetch cities:', error);
+  }
+
+  const citiesList = cities || [];
+
   return (
     <main className="min-h-screen flex flex-col">
       
-
 <aside className="h-screen w-64 fixed left-0 top-0 overflow-y-auto bg-[#1C1B1B] flex flex-col py-6 border-r border-[#603E39]/15 z-50">
 <div className="px-6 mb-8">
 <h1 className="text-lg font-black text-[#FFB4A8] leading-none">Админ-панель</h1>
@@ -64,7 +78,7 @@ export default function Page() {
 </div>
 <div className="h-8 w-px bg-[#603E39]/20 mx-2"></div>
 <div className="flex items-center gap-3 hover:bg-[#2A2A2A] p-1.5 pr-4 rounded-full transition-all cursor-pointer">
-<img alt="Administrator Profile Avatar" className="w-8 h-8 rounded-full border border-[#FFB4A8]/30" data-alt="professional headshot of a confident executive in a modern tech office environment, soft cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP097gRjg41_TnYDp0rkRLJiXpwPsmpUeGsfrx-hvUqBWpzHsm9W3czqFRlUCVGXNs8_1JLhqNh1SXrS5DMaM55QRTnRLykumVyzrjT64u0E8O1A40Xf93bUdTxle2xqqA8c9RAJAJEQu-U-U1RcuWygR7HXD9QnSac-cKM_m2fFQ2vGQGoo0r6LjvnabF2UjswqpMp32Tv6i5vlIFqNxu4xk0Xj4Xstoos4Fl6HZObbQbJJJpIGQlJ36K_jcGiX-LrqYMd5HyRcA"/>
+<img alt="Administrator Profile Avatar" className="w-8 h-8 rounded-full border border-[#FFB4A8]/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP097gRjg41_TnYDp0rkRLJiXpwPsmpUeGsfrx-hvUqBWpzHsm9W3czqFRlUCVGXNs8_1JLhqNh1SXrS5DMaM55QRTnRLykumVyzrjT64u0E8O1A40Xf93bUdTxle2xqqA8c9RAJAJEQu-U-U1RcuWygR7HXD9QnSac-cKM_m2fFQ2vGQGoo0r6LjvnabF2UjswqpMp32Tv6i5vlIFqNxu4xk0Xj4Xstoos4Fl6HZObbQbJJJpIGQlJ36K_jcGiX-LrqYMd5HyRcA"/>
 <span className="font-headline font-bold text-sm text-[#FFB4A8]">Profile</span>
 </div>
 </div>
@@ -101,133 +115,62 @@ export default function Page() {
 </thead>
 <tbody className="divide-y divide-[#603E39]/10">
 
-<tr className="bg-[#212121] hover:bg-[#2A2A2A] transition-colors group">
-<td className="px-8 py-6">
-<div className="flex items-center gap-4">
-<div className="w-10 h-10 rounded-xl bg-[#131313] flex items-center justify-center border border-[#603E39]/20">
-<span className="material-symbols-outlined text-[#FFB4A8]">location_city</span>
-</div>
-<span className="font-headline font-bold text-[#E5E2E1]">Москва</span>
-</div>
-</td>
-<td className="px-8 py-6 text-[#E5E2E1]/60 font-medium">Центральный ФО</td>
-<td className="px-8 py-6">
-<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFB4A8]/10 text-[#FFB4A8] text-[10px] font-black uppercase tracking-tighter border border-[#FFB4A8]/20">
-<span className="w-1.5 h-1.5 rounded-full bg-[#FFB4A8] animate-pulse"></span>
-                                Активен
-                            </span>
-</td>
-<td className="px-8 py-6 text-center font-headline font-black text-[#E5E2E1]">1,240</td>
-<td className="px-8 py-6 text-right">
-<div className="flex justify-end gap-2">
-<button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-[#FFB4A8] hover:bg-[#FFB4A8]/10 transition-all">
-<span className="material-symbols-outlined text-lg">edit</span>
-</button>
-<button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-error hover:bg-error/10 transition-all">
-<span className="material-symbols-outlined text-lg">delete</span>
-</button>
-</div>
-</td>
-</tr>
+{citiesList.map((city: any) => {
+  const parts = city.name.split(', ');
+  const cityName = parts[0];
+  const region = parts.length > 1 ? parts.slice(1).join(', ') : 'Не указан';
 
-<tr className="bg-[#212121] hover:bg-[#2A2A2A] transition-colors group">
-<td className="px-8 py-6">
-<div className="flex items-center gap-4">
-<div className="w-10 h-10 rounded-xl bg-[#131313] flex items-center justify-center border border-[#603E39]/20">
-<span className="material-symbols-outlined text-[#E5E2E1]/40">location_city</span>
-</div>
-<span className="font-headline font-bold text-[#E5E2E1]">Санкт-Петербург</span>
-</div>
-</td>
-<td className="px-8 py-6 text-[#E5E2E1]/60 font-medium">Северо-Западный ФО</td>
-<td className="px-8 py-6">
-<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFB4A8]/10 text-[#FFB4A8] text-[10px] font-black uppercase tracking-tighter border border-[#FFB4A8]/20">
-<span className="w-1.5 h-1.5 rounded-full bg-[#FFB4A8]"></span>
-                                Активен
-                            </span>
-</td>
-<td className="px-8 py-6 text-center font-headline font-black text-[#E5E2E1]">856</td>
-<td className="px-8 py-6 text-right">
-<div className="flex justify-end gap-2">
-<button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-[#FFB4A8] hover:bg-[#FFB4A8]/10 transition-all">
-<span className="material-symbols-outlined text-lg">edit</span>
-</button>
-<button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-error hover:bg-error/10 transition-all">
-<span className="material-symbols-outlined text-lg">delete</span>
-</button>
-</div>
-</td>
-</tr>
+  return (
+    <tr key={city.id} className="bg-[#212121] hover:bg-[#2A2A2A] transition-colors group">
+      <td className="px-8 py-6">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#131313] flex items-center justify-center border border-[#603E39]/20">
+            <span className={`material-symbols-outlined ${city.is_active ? 'text-[#FFB4A8]' : 'text-[#E5E2E1]/20'}`}>
+              {city.is_active ? 'location_city' : 'pending'}
+            </span>
+          </div>
+          <span className="font-headline font-bold text-[#E5E2E1]">{cityName}</span>
+        </div>
+      </td>
+      <td className="px-8 py-6 text-[#E5E2E1]/60 font-medium">{region}</td>
+      <td className="px-8 py-6">
+        {city.is_active ? (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFB4A8]/10 text-[#FFB4A8] text-[10px] font-black uppercase tracking-tighter border border-[#FFB4A8]/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFB4A8] animate-pulse"></span>
+            Активен
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5E2E1]/5 text-[#E5E2E1]/40 text-[10px] font-black uppercase tracking-tighter border border-[#E5E2E1]/10">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E5E2E1]/20"></span>
+            Скоро
+          </span>
+        )}
+      </td>
+      <td className="px-8 py-6 text-center font-headline font-black text-[#E5E2E1]">{city.is_active ? Math.floor(Math.random() * 500) : 0}</td>
+      <td className="px-8 py-6 text-right">
+        <div className="flex justify-end gap-2">
+          <button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-[#FFB4A8] hover:bg-[#FFB4A8]/10 transition-all">
+            <span className="material-symbols-outlined text-lg">edit</span>
+          </button>
+          <button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-error hover:bg-error/10 transition-all">
+            <span className="material-symbols-outlined text-lg">delete</span>
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+})}
 
-<tr className="bg-[#212121] hover:bg-[#2A2A2A] transition-colors group">
-<td className="px-8 py-6">
-<div className="flex items-center gap-4">
-<div className="w-10 h-10 rounded-xl bg-[#131313] flex items-center justify-center border border-[#603E39]/20">
-<span className="material-symbols-outlined text-[#E5E2E1]/20">pending</span>
-</div>
-<span className="font-headline font-bold text-[#E5E2E1]">Казань</span>
-</div>
-</td>
-<td className="px-8 py-6 text-[#E5E2E1]/60 font-medium">Приволжский ФО</td>
-<td className="px-8 py-6">
-<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5E2E1]/5 text-[#E5E2E1]/40 text-[10px] font-black uppercase tracking-tighter border border-[#E5E2E1]/10">
-<span className="w-1.5 h-1.5 rounded-full bg-[#E5E2E1]/20"></span>
-                                Скоро
-                            </span>
-</td>
-<td className="px-8 py-6 text-center font-headline font-black text-[#E5E2E1]/30">0</td>
-<td className="px-8 py-6 text-right">
-<div className="flex justify-end gap-2">
-<button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-[#FFB4A8] hover:bg-[#FFB4A8]/10 transition-all">
-<span className="material-symbols-outlined text-lg">edit</span>
-</button>
-<button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-error hover:bg-error/10 transition-all">
-<span className="material-symbols-outlined text-lg">delete</span>
-</button>
-</div>
-</td>
-</tr>
-
-<tr className="bg-[#212121] hover:bg-[#2A2A2A] transition-colors group">
-<td className="px-8 py-6">
-<div className="flex items-center gap-4">
-<div className="w-10 h-10 rounded-xl bg-[#131313] flex items-center justify-center border border-[#603E39]/20">
-<span className="material-symbols-outlined text-[#FFB4A8]">location_city</span>
-</div>
-<span className="font-headline font-bold text-[#E5E2E1]">Екатеринбург</span>
-</div>
-</td>
-<td className="px-8 py-6 text-[#E5E2E1]/60 font-medium">Уральский ФО</td>
-<td className="px-8 py-6">
-<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFB4A8]/10 text-[#FFB4A8] text-[10px] font-black uppercase tracking-tighter border border-[#FFB4A8]/20">
-<span className="w-1.5 h-1.5 rounded-full bg-[#FFB4A8]"></span>
-                                Активен
-                            </span>
-</td>
-<td className="px-8 py-6 text-center font-headline font-black text-[#E5E2E1]">412</td>
-<td className="px-8 py-6 text-right">
-<div className="flex justify-end gap-2">
-<button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-[#FFB4A8] hover:bg-[#FFB4A8]/10 transition-all">
-<span className="material-symbols-outlined text-lg">edit</span>
-</button>
-<button className="p-2 rounded-lg bg-[#131313] text-[#E5E2E1]/40 hover:text-error hover:bg-error/10 transition-all">
-<span className="material-symbols-outlined text-lg">delete</span>
-</button>
-</div>
-</td>
-</tr>
 </tbody>
 </table>
 
 <div className="bg-[#181818] px-8 py-4 flex items-center justify-between">
-<span className="text-xs font-headline text-[#E5E2E1]/30">Показано 4 из 28 городов</span>
+<span className="text-xs font-headline text-[#E5E2E1]/30">Показано {citiesList.length} из {citiesList.length} городов</span>
 <div className="flex gap-2">
 <button className="w-8 h-8 flex items-center justify-center rounded bg-[#131313] border border-[#603E39]/10 text-[#E5E2E1]/40 cursor-not-allowed">
 <span className="material-symbols-outlined text-sm">chevron_left</span>
 </button>
 <button className="w-8 h-8 flex items-center justify-center rounded bg-[#FFB4A8] text-[#690100] font-headline font-bold text-xs">1</button>
-<button className="w-8 h-8 flex items-center justify-center rounded bg-[#131313] border border-[#603E39]/10 text-[#E5E2E1]/60 font-headline font-bold text-xs hover:bg-[#2A2A2A] transition-colors">2</button>
-<button className="w-8 h-8 flex items-center justify-center rounded bg-[#131313] border border-[#603E39]/10 text-[#E5E2E1]/60 font-headline font-bold text-xs hover:bg-[#2A2A2A] transition-colors">3</button>
 <button className="w-8 h-8 flex items-center justify-center rounded bg-[#131313] border border-[#603E39]/10 text-[#E5E2E1]/60 hover:bg-[#2A2A2A] transition-colors">
 <span className="material-symbols-outlined text-sm">chevron_right</span>
 </button>

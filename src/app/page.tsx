@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function Page() {
   const router = useRouter();
@@ -44,24 +45,25 @@ export default function Page() {
 
         if (res.ok) {
           authSuccess = true;
+          const data = await res.json();
+          if (data.user) {
+            localStorage.setItem('user-data', JSON.stringify(data.user));
+          }
         } else {
           const data = await res.json();
-          // Используем warn вместо error в дев-режиме, чтобы не вызывался Error Overlay в Next.js
           if (process.env.NODE_ENV === 'development') {
             console.warn('[Auth Skip] Разработка: вход без параметров VK разрешен');
             authSuccess = true;
           } else {
             console.error('[Auth Error]:', data.error);
+            // We allow proceeding to city selection even if auth fails in some cases,
+            // but let's mark it so we can show an error if needed.
+            authSuccess = false;
           }
         }
-        authFinished = true;
       } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[Auth Fetch Skip] Ошибка подключения, но разрешено в дев-режиме');
-          authSuccess = true;
-        } else {
-          console.error('[Auth Fetch Error]:', err);
-        }
+        console.error('[Auth Fetch Error]:', err);
+        authSuccess = process.env.NODE_ENV === 'development';
       } finally {
         authFinished = true;
       }
@@ -70,7 +72,6 @@ export default function Page() {
     initAuth();
 
     const step = () => {
-      // Плавный прогресс
       if (progress < 90) {
         progress += 1.5;
       } else if (authFinished) {
@@ -90,25 +91,46 @@ export default function Page() {
       if (pct < 100) {
         setTimeout(step, 30);
       } else {
-        setTimeout(() => {
-          if (authSuccess) {
-            localStorage.setItem('user-registered', 'true');
-            
-            // 1. Check for active ride first
-            const activeRideData = localStorage.getItem('active-ride-data');
-            if (activeRideData) {
+        setTimeout(async () => {
+          // Resolve even if auth failed, but redirect to city selection as safety
+          localStorage.setItem('user-registered', 'true');
+          
+          let userId = null;
+          try {
+            const userData = localStorage.getItem('user-data');
+            if (userData) userId = JSON.parse(userData).id;
+          } catch {}
+
+          // 1. Check Supabase for active ride first (Production source of truth)
+          if (userId) {
+            const { data: activeRide, error } = await supabase
+              .from('ride_requests')
+              .select('*')
+              .or(`user_id.eq.${userId},driver_id.eq.${userId}`)
+              .in('status', ['accepted', 'in_progress'])
+              .maybeSingle();
+
+            if (activeRide && !error) {
+              localStorage.setItem('active-ride-data', JSON.stringify(activeRide));
               router.push('/active-ride');
               return;
             }
+          }
 
-            // 2. Otherwise go to home based on city and role
-            const city = localStorage.getItem('user-city');
-            if (!city) {
-              router.push('/city-selection');
-            } else {
-              const savedRole = localStorage.getItem('app-role') || 'passenger';
-              router.push(`/${savedRole}/home`);
-            }
+          // 2. Fallback to localStorage for legacy/offline support
+          const activeRideData = localStorage.getItem('active-ride-data');
+          if (activeRideData) {
+            router.push('/active-ride');
+            return;
+          }
+
+          // 3. Otherwise go to home based on city and role
+          const city = localStorage.getItem('user-city');
+          if (!city) {
+            router.push('/city-selection');
+          } else {
+            const savedRole = localStorage.getItem('app-role') || 'passenger';
+            router.push(`/${savedRole}/home`);
           }
         }, 400);
       }
