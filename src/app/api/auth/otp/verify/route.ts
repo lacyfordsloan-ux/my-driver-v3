@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const verifySchema = z.object({
   phone: z.string().min(10).max(15).regex(/^\+?[1-9]\d{1,14}$/),
   otp: z.string().length(4),
