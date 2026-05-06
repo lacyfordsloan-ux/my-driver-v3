@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
-import prisma from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
@@ -26,15 +26,38 @@ export async function POST(req: Request) {
     // OTP Correct: Delete it from Redis
     await redis.del(`phone_otp:${phone}`);
 
-    // Create or Fetch User
-    let user = await prisma.user.findUnique({ where: { phone } });
+    // Find or create user in Supabase profiles table
+    let { data: user, error: findError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('phone', phone)
+      .maybeSingle();
+
+    if (findError) {
+      console.error('[OTP Verify] Error finding user:', findError);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
 
     if (!user) {
-      user = await prisma.user.create({ data: { phone } });
+      const { data: newUser, error: createError } = await supabase
+        .from('profiles')
+        .insert({ phone, role: 'passenger', name: phone })
+        .select()
+        .single();
+
+      if (createError || !newUser) {
+        console.error('[OTP Verify] Error creating user:', createError);
+        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+      }
+      user = newUser;
     }
 
     // Generate JWT
-    const token = jwt.sign({ id: user.id, phone: user.phone, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(
+      { id: user.id, phone: user.phone, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
     // Set persistence cookie
     const cookieStore = await cookies();
