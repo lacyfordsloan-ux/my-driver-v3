@@ -93,8 +93,12 @@ export const NavigationDrawer = () => {
     window.dispatchEvent(new Event('storage'));
   }, [isOpen]);
 
-  // Hide drawer entirely if not registered, on splash screen, or on role selection screen
-  if (!isRegistered || pathname === '/' || pathname === '/role-selection') return null;
+  // Force visible in development or if registered. 
+  // On desktop, we always want the sidebar to be ready once out of the splash screen.
+  const shouldShow = isRegistered || isDesktop || process.env.NODE_ENV === 'development';
+  
+  // Hide drawer entirely if on splash screen or role selection screen
+  if (!shouldShow || pathname === '/' || pathname === '/role-selection') return null;
 
   const navItems = role === 'driver' 
     ? [
@@ -379,6 +383,28 @@ export const NavigationDrawer = () => {
               Выйти
             </span>
           </button>
+          <div style={{
+            marginTop: '1rem',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.75rem',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.25rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Версия</span>
+              <span style={{ fontSize: '10px', color: '#FFB4A8', fontWeight: 800 }}>v1.1.0-release</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Статус</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }}></div>
+                <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 800 }}>Online</span>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
     );
@@ -685,6 +711,28 @@ export const NavigationDrawer = () => {
               Выйти
             </span>
           </button>
+          <div style={{
+            marginTop: '0.75rem',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.75rem',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.25rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Версия</span>
+              <span style={{ fontSize: '10px', color: '#FFB4A8', fontWeight: 800 }}>v1.1.0-release</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Статус</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }}></div>
+                <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 800 }}>Online</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </>

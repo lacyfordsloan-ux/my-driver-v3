@@ -30,40 +30,92 @@ export default function Page() {
 
   useEffect(() => {
     let progress = 0;
-    let timeoutId: ReturnType<typeof setTimeout>;
+    let authFinished = false;
+    let authSuccess = false;
+
+    const initAuth = async () => {
+      try {
+        const queryString = typeof window !== 'undefined' ? window.location.search : '';
+        const res = await fetch('/api/auth/vk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queryString }),
+        });
+
+        if (res.ok) {
+          authSuccess = true;
+        } else {
+          const data = await res.json();
+          // Используем warn вместо error в дев-режиме, чтобы не вызывался Error Overlay в Next.js
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[Auth Skip] Разработка: вход без параметров VK разрешен');
+            authSuccess = true;
+          } else {
+            console.error('[Auth Error]:', data.error);
+          }
+        }
+        authFinished = true;
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[Auth Fetch Skip] Ошибка подключения, но разрешено в дев-режиме');
+          authSuccess = true;
+        } else {
+          console.error('[Auth Fetch Error]:', err);
+        }
+      } finally {
+        authFinished = true;
+      }
+    };
+
+    initAuth();
 
     const step = () => {
-      progress += 2;
-      const pct = progress > 100 ? 100 : progress;
+      // Плавный прогресс
+      if (progress < 90) {
+        progress += 1.5;
+      } else if (authFinished) {
+        progress += 5;
+      }
 
+      const pct = Math.min(Math.round(progress), 100);
+      
       if (barRef.current) barRef.current.style.width = `${pct}%`;
       if (textRef.current) textRef.current.textContent = `${pct}%`;
 
-      // Вращение Домов ПРОТИВ часовой стрелки
       if (domaRef.current) {
         const deg = (pct / 100) * 360;
         domaRef.current.style.transform = `rotate(${-deg}deg)`;
       }
 
-      if (progress < 100) {
-        timeoutId = setTimeout(step, 40);
+      if (pct < 100) {
+        setTimeout(step, 30);
       } else {
-        timeoutId = setTimeout(() => {
-          const isRegistered = typeof window !== 'undefined' && localStorage.getItem('user-registered') === 'true';
+        setTimeout(() => {
+          if (authSuccess) {
+            localStorage.setItem('user-registered', 'true');
+            
+            // 1. Check for active ride first
+            const activeRideData = localStorage.getItem('active-ride-data');
+            if (activeRideData) {
+              router.push('/active-ride');
+              return;
+            }
 
-          if (isRegistered) {
-            routerRef.current.push('/role-selection');
-          } else {
-            routerRef.current.push('/onboarding');
+            // 2. Otherwise go to home based on city and role
+            const city = localStorage.getItem('user-city');
+            if (!city) {
+              router.push('/city-selection');
+            } else {
+              const savedRole = localStorage.getItem('app-role') || 'passenger';
+              router.push(`/${savedRole}/home`);
+            }
           }
         }, 400);
       }
     };
 
-    // Мгновенный старт прогресса (без задержки)
-    timeoutId = setTimeout(step, 50);
-    return () => clearTimeout(timeoutId);
-  }, []);
+    step();
+  }, [router]);
 
   return (
     <main style={{
@@ -188,31 +240,21 @@ export default function Page() {
             transition: 'width 0.05s linear',
           }} />
         </div>
-      </div>
-
-      {/* ── Skip button ───────────────────────────────── */}
-      <button
-        onClick={() => router.push('/role-selection')}
-        style={{
-          position: 'absolute',
-          bottom: '1.75rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'transparent',
-          border: 'none',
-          color: 'rgba(255,255,255,0.2)',
-          fontSize: '0.575rem',
-          fontWeight: 700,
+        <div style={{
+          marginTop: '1.5rem',
+          textAlign: 'center',
+          opacity: 0.2,
+          fontSize: '9px',
+          fontFamily: 'var(--font-manrope)',
+          fontWeight: 800,
           textTransform: 'uppercase',
           letterSpacing: '0.3em',
-          cursor: 'pointer',
-          padding: '0.75rem 1.5rem',
-          WebkitTapHighlightColor: 'transparent',
-          zIndex: 10000,
-        }}
-      >
-        Пропустить →
-      </button>
+          color: '#FFFFFF'
+        }}>
+          Powered by Antigravity
+        </div>
+      </div>
+
     </main>
   );
 }
