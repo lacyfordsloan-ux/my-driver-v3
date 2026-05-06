@@ -5,12 +5,12 @@
   "scripts": {
     "dev": "concurrently \"next dev\" \"node src/server/socket.mjs\"",
     "build": "next build",
-    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@supabase/supabase-js": "^2.105.3",
+    "@vkontakte/vk-bridge": "^2.15.12",
     "axios": "^1.15.0",
     "concurrently": "^9.2.1",
     "framer-motion": "^12.38.0",
@@ -34,13 +34,9 @@
     "@types/socket.io-client": "^1.4.36",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
-    "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "node --loader ts-node/esm prisma/seed.ts"
   }
 }
