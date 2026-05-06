@@ -47,9 +47,6 @@ export async function POST(req: Request) {
       .update({ status: 'SUCCEEDED' })
       .eq('id', subscription.id);
 
-    // Optionally update user role or meta for subscription access
-    // await prisma.user.update({ where: { id: subscription.userId }, data: { subActiveUntil: ... } });
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[YOO WEBHOOK] Error processing webhook:', error);
