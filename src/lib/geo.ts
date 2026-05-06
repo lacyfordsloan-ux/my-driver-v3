@@ -11,11 +11,9 @@ interface GeocodeResult {
  */
 export async function geocode(address: string): Promise<GeocodeResult | null> {
   try {
-    // Phase 1: Primary provider (placeholder)
-    const primaryResult = null; // Assume primary is down or not configures
+    const primaryResult = null;
     if (primaryResult) return primaryResult;
 
-    // Phase 2: OpenStreetMap (Nominatim) Fallback
     console.log(`[GEO] Falling back to OpenStreetMap for: ${address}`);
     const encodeAddress = encodeURIComponent(address);
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeAddress}&format=json&limit=1`;

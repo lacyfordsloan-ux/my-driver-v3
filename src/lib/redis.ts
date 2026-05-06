@@ -8,7 +8,6 @@ export async function rateLimit(key: string, limit: number, windowInSeconds: num
   const count = current ? parseInt(current) : 0;
 
   if (count >= limit) {
-    const ttl = await redis.ttl(key);
     return { success: false, remaining: 0 };
   }
 
